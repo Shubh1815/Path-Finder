@@ -1,3 +1,4 @@
+import time
 import random
 import pygame
 
@@ -6,19 +7,36 @@ class Cell:
         self.pos_x = x * length
         self.pos_y = y * length
         self.length = length
+        self.win = win
+
         self.wall = {
             'up': True,
-            'down': True,
-            'left': True,
             'right': True,
+            'down': True,
+            'left': True
         }
-        self.win = win
+
         self.generate_boundary()
+
+    def fill(self, color=(255, 255, 255)):
+
+        pygame.draw.rect(
+            self.win,
+            color,
+            pygame.Rect(
+                self.pos_x + 1,
+                self.pos_y + 1,
+                self.length - 1,
+                self.length - 1
+            )
+        )
+
+        pygame.display.update()
 
     def generate_boundary(self):
 
         wall_color = (0, 0, 0)
-        no_wall = (20, 39, 78)
+        no_wall = (82, 5, 123)
 
         # LEFT
         pygame.draw.line(
@@ -52,6 +70,10 @@ class Cell:
             (self.pos_x + self.length, self.pos_y + self.length)
         )
 
+    def destroy_wall(self, side):
+        self.wall[side] = False
+        self.generate_boundary()
+
 class Grid:
     def __init__(self, win, length, width):
         self.win = win
@@ -62,38 +84,50 @@ class Grid:
     def initialize(self):
         for i in range(self.length):
             for j in range(self.width):
-                self.grid[i][j] = Cell(self.win, i, j)
+                self.grid[i][j] = Cell(self.win, j, i)
 
     def generate_maze(self):
-        visited = [[False for i in range(self.width)] for j in range(self.length)]
-        stack = [(0, 0)]
+
+        visited = [[ False for i in range(self.width)] for j in range(self.length)]
+
+        opposite = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        }
+
+        stack = [(0, 0, -1, -1, None)]
 
         while stack:
 
-            i, j = stack.pop(-1)
+            i, j, prev_i, prev_j, direction = stack.pop(-1)
 
-            if visited[i][j]:
-                continue
+            if not visited[i][j]:
+                # if visited highlight the node
+                visited[i][j] = True
 
-            visited[i][j] = True
+                if direction:
+                    self.grid[prev_i][prev_j].destroy_wall(direction)
+                    self.grid[i][j].destroy_wall(opposite[direction])
 
-            neighbours = [
-                ((i - 1, j), 'up'),
-                ((i, j + 1), 'right'),
-                ((i + 1, j), 'down'),
-                ((i, j - 1), 'left')
-            ]
+                neighbour = [
+                    ((i - 1, j), 'up'),
+                    ((i, j - 1), 'left'),
+                    ((i + 1, j), 'down'),
+                    ((i, j + 1), 'right')
+                ]
 
-            random.shuffle(neighbours)
+                random.shuffle(neighbour)
 
-            for ( x, y ), direction in neighbours:
+                for (next_i, next_j), direction in neighbour:
+                    if 0 <= next_i < self.length and 0 <= next_j < self.width:
+                        stack.append((next_i, next_j, i, j, direction))
 
-                if 0 <= x < self.length and 0 <= y < self.width:
-                    if not visited[x][y]:
+            else:
+                # if visited highlight the parent node
+                i, j = prev_i, prev_j
 
-                        self.grid[x][y].wall[direction] = False
-                        self.grid[x][y].generate_boundary()
-
-                        stack.append((x, y))
-
-            pygame.display.update()
+            self.grid[i][j].fill()
+            time.sleep(0.01)
+            self.grid[i][j].fill((82, 5, 123))
