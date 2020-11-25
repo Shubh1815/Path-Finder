@@ -1,99 +1,81 @@
 import time
 import random
-import pygame
 
 class Cell:
-    def __init__(self, win, x, y, length=10):
+    def __init__(self, canvas, x, y, length=20):
         self.pos_x = x * length
         self.pos_y = y * length
         self.length = length
-        self.win = win
+        self.canvas = canvas
 
         self.wall = {
-            'up': True,
-            'right': True,
-            'down': True,
-            'left': True
+            'up': [True, self.canvas.create_line(
+                self.pos_x, self.pos_y,
+                self.pos_x + self.length, self.pos_y,
+                fill="#000000"
+            )],
+            'right': [True, self.canvas.create_line(
+                self.pos_x + self.length, self.pos_y,
+                self.pos_x + self.length, self.pos_y + self.length,
+                fill="#000000"
+            )],
+            'down': [True, self.canvas.create_line(
+                self.pos_x, self.pos_y + self.length,
+                self.pos_x + self.length, self.pos_y + self.length,
+                fill="#000000"
+            )],
+            'left': [True, self.canvas.create_line(
+                self.pos_x, self.pos_y,
+                self.pos_x, self.pos_y + self.length,
+                fill="#000000"
+            )]
         }
 
-        self.generate_boundary()
+        self.cell = self.canvas.create_rectangle(
+                        self.pos_x + 1,
+                        self.pos_y + 1,
+                        self.pos_x + self.length - 1,
+                        self.pos_y + self.length - 1,
+                        width=0
+                    )
 
-    def fill(self, color=(255, 255, 255)):
+    def fill(self, color="#ffffff"):
+        self.canvas.itemconfig(self.cell, fill=color, outline=color, width=1)
 
-        pygame.draw.rect(
-            self.win,
-            color,
-            pygame.Rect(
-                self.pos_x + 1,
-                self.pos_y + 1,
-                self.length - 1,
-                self.length - 1
-            )
+    def reset(self):
+        self.canvas.itemconfig(
+            self.cell,
+            fill="#14274e",
+            outline="#14274e"
         )
-
-        pygame.display.update()
-
-    def generate_boundary(self):
-
-        wall_color = (0, 0, 0)
-        no_wall = (82, 5, 123)
-
-        # LEFT
-        pygame.draw.line(
-            self.win,
-            wall_color if self.wall['left'] else no_wall,
-            (self.pos_x, self.pos_y),
-            (self.pos_x, self.pos_y + self.length)
-        )
-
-        # RIGHT
-        pygame.draw.line(
-            self.win,
-            wall_color if self.wall['right'] else no_wall,
-            (self.pos_x + self.length, self.pos_y),
-            (self.pos_x + self.length, self.pos_y + self.length)
-        )
-
-        # UP
-        pygame.draw.line(
-            self.win,
-            wall_color if self.wall['up'] else no_wall,
-            (self.pos_x, self.pos_y),
-            (self.pos_x + self.length, self.pos_y)
-        )
-
-        # DOWN
-        pygame.draw.line(
-            self.win,
-            wall_color if self.wall['down'] else no_wall,
-            (self.pos_x, self.pos_y + self.length),
-            (self.pos_x + self.length, self.pos_y + self.length)
-        )
+        for _, wall in self.wall.values():
+            self.canvas.itemconfig(wall, fill="#000000")
 
     def destroy_wall(self, side):
-        self.wall[side] = False
-        self.generate_boundary()
+        self.wall[side][0] = False
+        self.canvas.itemconfig(self.wall[side][1], fill="#52057b")
 
 class Grid:
-    def __init__(self, win, length, width):
-        self.win = win
+    def __init__(self, canvas, length, width):
+        self.canvas = canvas
         self.length = length
         self.width = width
         self.grid = [[0 for i in range(width)] for j in range(length) ]
 
     def initialize(self):
-        self.win.fill((20, 39, 78))
+        self.canvas.config(bg="#14274e")
 
         for i in range(self.length):
             for j in range(self.width):
-                self.grid[i][j] = Cell(self.win, j, i)
+                self.grid[i][j] = Cell(self.canvas, j, i)
 
-        pygame.display.update()
+    def reset(self):
+        for i in range(self.length):
+            for j in range(self.width):
+                self.grid[i][j].reset()
 
     def generate_maze(self, visualize, perfect_maze):
-        self.initialize()
         visited = [[ 0 for i in range(self.width)] for j in range(self.length)]
-
         opposite = {
             'up': 'down',
             'down': 'up',
@@ -107,7 +89,7 @@ class Grid:
 
             i, j, prev_i, prev_j, direction = stack.pop(-1)
 
-            if not visited[i][j] or (visited[i][j] < 2 and random.random() <= 0.3):
+            if not visited[i][j] or (visited[i][j] < 2 and random.random() <= 0.2):
                 # if visited highlight the node
                 visited[i][j] += perfect_maze
 
@@ -135,5 +117,5 @@ class Grid:
 
             self.grid[i][j].fill()
             if visualize:
-                time.sleep(0.005)
-            self.grid[i][j].fill((82, 5, 123))
+                time.sleep(0.0125)
+            self.grid[i][j].fill("#52057b")

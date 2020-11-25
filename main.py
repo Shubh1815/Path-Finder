@@ -1,7 +1,5 @@
-import os
 import threading
 import tkinter as tk
-import pygame
 from grid import Grid
 from utils import Button, Checkbutton, Label
 
@@ -13,15 +11,24 @@ class App(tk.Tk):
         self.resizable(0, 0)
         self.title("Path Finder")
         self.protocol('WM_DELETE_WINDOW', self.quit)
+
         self.running = True
+        self.visualize_maze = tk.IntVar()
+        self.perfect_maze = tk.IntVar()
 
         container = tk.Frame(self, width="800", height="501", bg="black")
         container.rowconfigure(0, weight=1)    # Expanding the 1st row
         container.columnconfigure(1, weight=1) # Expanding the 2nd column
         container.pack(fill=tk.X)
 
-        embed = tk.Frame(container, width=501, height=501)
-        embed.grid(row=0, column=0, padx=5, pady=5)
+        canvas = tk.Canvas(
+            container,
+            width=501,
+            height=501,
+            bg="#14274e",
+            highlightthickness=0,
+        )
+        canvas.grid(row=0, column=0, padx=5, pady=5)
 
         self.toolkit = tk.Frame(container, bg="#212b44")
         self.toolkit.columnconfigure(0, weight=1)
@@ -34,21 +41,10 @@ class App(tk.Tk):
             pady=5
         )
 
-        self.visualize_maze = tk.IntVar()
-        self.perfect_maze = tk.IntVar()
-
-        os.environ['SDL_WINDOWID'] = str(embed.winfo_id())
-        self.update()
-
-        pygame.display.init()
-        win = pygame.display.set_mode((501, 501))
-
-        self.grid = Grid(win, 50, 50)
+        self.grid = Grid(canvas, 25, 25)
         self.clear_maze_thread = None
         self.generate_maze_thread = None
-        self.clear_maze()
-
-        pygame.display.update()
+        self.grid.initialize()
 
         self.toolkit_section()
 
@@ -99,7 +95,7 @@ class App(tk.Tk):
            (not self.clear_maze_thread or not self.clear_maze_thread.is_alive()):
 
             self.clear_maze_thread = threading.Thread(
-                target=self.grid.initialize
+                target=self.grid.reset
             )
             self.clear_maze_thread.start()
 
@@ -108,6 +104,7 @@ class App(tk.Tk):
            not self.generate_maze_thread.is_alive()) and \
            (not self.clear_maze_thread or not self.clear_maze_thread.is_alive()):
 
+            self.grid.reset()
             self.generate_maze_thread = threading.Thread(
                 target=self.grid.generate_maze,
                 args=(self.visualize_maze.get(), self.perfect_maze.get() + 1)
@@ -115,17 +112,8 @@ class App(tk.Tk):
             self.generate_maze_thread.start()
 
     def quit(self):
-        if self.clear_maze_thread and self.clear_maze_thread.is_alive():
-            self.clear_maze_thread.join()
-        if self.generate_maze_thread and self.generate_maze_thread.is_alive():
-            self.generate_maze_thread.join()
-
-        self.running = False
         self.destroy()
-
-        
 
 if __name__ == '__main__':
     root = App()
     root.mainloop()
-    
