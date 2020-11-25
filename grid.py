@@ -82,13 +82,17 @@ class Grid:
         self.grid = [[0 for i in range(width)] for j in range(length) ]
 
     def initialize(self):
+        self.win.fill((20, 39, 78))
+
         for i in range(self.length):
             for j in range(self.width):
                 self.grid[i][j] = Cell(self.win, j, i)
 
-    def generate_maze(self):
+        pygame.display.update()
 
-        visited = [[ False for i in range(self.width)] for j in range(self.length)]
+    def generate_maze(self, visualize, perfect_maze):
+        self.initialize()
+        visited = [[ 0 for i in range(self.width)] for j in range(self.length)]
 
         opposite = {
             'up': 'down',
@@ -103,9 +107,9 @@ class Grid:
 
             i, j, prev_i, prev_j, direction = stack.pop(-1)
 
-            if not visited[i][j]:
+            if not visited[i][j] or (visited[i][j] < 2 and random.random() <= 0.3):
                 # if visited highlight the node
-                visited[i][j] = True
+                visited[i][j] += perfect_maze
 
                 if direction:
                     self.grid[prev_i][prev_j].destroy_wall(direction)
@@ -126,8 +130,10 @@ class Grid:
 
             else:
                 # if visited highlight the parent node
+                visited[i][j] += 1
                 i, j = prev_i, prev_j
 
             self.grid[i][j].fill()
-            time.sleep(0.01)
+            if visualize:
+                time.sleep(0.005)
             self.grid[i][j].fill((82, 5, 123))
