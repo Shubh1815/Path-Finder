@@ -7,6 +7,7 @@ class Cell:
         self.pos_y = y * length
         self.length = length
         self.canvas = canvas
+        self.selected = 0
 
         self.wall = {
             'up': [True, self.canvas.create_line(
@@ -42,7 +43,14 @@ class Cell:
     def fill(self, color="#ffffff"):
         self.canvas.itemconfig(self.cell, fill=color, outline=color, width=1)
 
+    def select(self):
+        color = ("#52057b", "#03c4a1")
+        self.selected ^= 1
+        self.fill(color[self.selected])
+
+
     def reset(self):
+        self.selected = 0
         self.canvas.itemconfig(
             self.cell,
             fill="#14274e",
@@ -61,6 +69,9 @@ class Grid:
         self.length = length
         self.width = width
         self.grid = [[0 for i in range(width)] for j in range(length) ]
+        self.is_maze = False
+
+        self.nodes = []
 
     def initialize(self):
         self.canvas.config(bg="#14274e")
@@ -70,6 +81,8 @@ class Grid:
                 self.grid[i][j] = Cell(self.canvas, j, i)
 
     def reset(self):
+        self.is_maze = False
+        self.nodes = []
         for i in range(self.length):
             for j in range(self.width):
                 self.grid[i][j].reset()
@@ -119,3 +132,16 @@ class Grid:
             if visualize:
                 time.sleep(0.0125)
             self.grid[i][j].fill("#52057b")
+
+        self.is_maze = True
+
+    def mark_cell(self, pos):
+        if self.is_maze:
+            pos_x, pos_y = pos.x, pos.y
+            cell = self.grid[pos_y // 20][pos_x // 20]
+            if not cell.selected and len(self.nodes) < 2:
+                cell.select()
+                self.nodes.append((pos_x // 20, pos_y // 20))
+            elif cell.selected:
+                cell.select()
+                self.nodes.remove((pos_x // 20, pos_y // 20))

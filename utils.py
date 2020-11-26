@@ -1,6 +1,6 @@
 import tkinter as tk
 
-BG_PRIMARY = "#212b44"
+BG_PRIMARY = "#334062"
 BG_PRIMARY_LIGHT = "#19212f"
 BG_SECONDARY = "#151b2a"
 
@@ -8,7 +8,7 @@ TEXT_PRIMARY = "#ffffff"
 
 
 class Label(tk.Label):
-    def __init__(self, *args, fontSize=18, **kwargs):
+    def __init__(self, *args, size=18, **kwargs):
 
         props = {
             'bg': BG_PRIMARY,
@@ -17,7 +17,7 @@ class Label(tk.Label):
 
         super().__init__(*args, **props, **kwargs)
 
-        self.config(font=("Helvetica", fontSize))
+        self.config(font=("Helvetica", size))
 
 
 class Button(tk.Button):
@@ -28,7 +28,7 @@ class Button(tk.Button):
             'fg': TEXT_PRIMARY,
             'activebackground': BG_PRIMARY_LIGHT,
             'activeforeground': TEXT_PRIMARY,
-            'borderwidth': 1,
+            'borderwidth': 0,
             'highlightthickness': 1
         }
 
