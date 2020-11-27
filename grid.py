@@ -13,41 +13,59 @@ class Cell:
             'up': [True, self.canvas.create_line(
                 self.pos_x, self.pos_y,
                 self.pos_x + self.length, self.pos_y,
-                fill="#000000"
+                fill="#000000",
+                width=1.5,
             )],
             'right': [True, self.canvas.create_line(
                 self.pos_x + self.length, self.pos_y,
                 self.pos_x + self.length, self.pos_y + self.length,
-                fill="#000000"
+                fill="#000000",
+                width=1.5,
             )],
             'down': [True, self.canvas.create_line(
                 self.pos_x, self.pos_y + self.length,
                 self.pos_x + self.length, self.pos_y + self.length,
-                fill="#000000"
+                fill="#000000",
+                width=1.5,
             )],
             'left': [True, self.canvas.create_line(
                 self.pos_x, self.pos_y,
                 self.pos_x, self.pos_y + self.length,
-                fill="#000000"
+                fill="#000000",
+                width=1.5,
             )]
         }
 
         self.cell = self.canvas.create_rectangle(
-                        self.pos_x + 1,
-                        self.pos_y + 1,
-                        self.pos_x + self.length - 1,
-                        self.pos_y + self.length - 1,
+                        self.pos_x + 1.5,
+                        self.pos_y + 1.5,
+                        self.pos_x + self.length - 1.5,
+                        self.pos_y + self.length - 1.5,
                         width=0
                     )
 
+    def get_neighbour(self):
+        neighbours = []
+
+        if not self.wall['left'][0]:
+            neighbours.append((0, -1))
+        if not self.wall['right'][0]:
+            neighbours.append((0, 1))
+        if not self.wall['up'][0]:
+            neighbours.append((-1, 0))
+        if not self.wall['down'][0]:
+            neighbours.append((1, 0))
+
+        return neighbours
+
     def fill(self, color="#ffffff"):
         self.canvas.itemconfig(self.cell, fill=color, outline=color, width=1)
+        self.canvas.update_idletasks()
 
     def select(self):
         color = ("#52057b", "#03c4a1")
         self.selected ^= 1
         self.fill(color[self.selected])
-
 
     def reset(self):
         self.selected = 0
@@ -56,12 +74,16 @@ class Cell:
             fill="#14274e",
             outline="#14274e"
         )
-        for _, wall in self.wall.values():
-            self.canvas.itemconfig(wall, fill="#000000")
+        for w in self.wall:
+            self.wall[w][0] = True
+            self.canvas.itemconfig(self.wall[w][1], fill="#000000")
+            self.canvas.update_idletasks()
 
-    def destroy_wall(self, side):
-        self.wall[side][0] = False
-        self.canvas.itemconfig(self.wall[side][1], fill="#52057b")
+    def destroy_wall(self, *sides):
+        for side in sides:
+            self.wall[side][0] = False
+            self.canvas.itemconfig(self.wall[side][1], fill="#52057b")
+            self.canvas.update_idletasks()
 
 class Grid:
     def __init__(self, canvas, length, width):
@@ -70,6 +92,7 @@ class Grid:
         self.width = width
         self.grid = [[0 for i in range(width)] for j in range(length) ]
         self.is_maze = False
+        self.solved = False
 
         self.nodes = []
 
@@ -82,12 +105,17 @@ class Grid:
 
     def reset(self):
         self.is_maze = False
+        self.solved = False
         self.nodes = []
         for i in range(self.length):
             for j in range(self.width):
                 self.grid[i][j].reset()
 
     def generate_maze(self, visualize, perfect_maze):
+
+        if self.is_maze:
+            self.reset()
+
         visited = [[ 0 for i in range(self.width)] for j in range(self.length)]
         opposite = {
             'up': 'down',
@@ -102,7 +130,7 @@ class Grid:
 
             i, j, prev_i, prev_j, direction = stack.pop(-1)
 
-            if not visited[i][j] or (visited[i][j] < 2 and random.random() <= 0.2):
+            if not visited[i][j] or (visited[i][j] < 2 and random.random() <= 0.6):
                 # if visited highlight the node
                 visited[i][j] += perfect_maze
 
@@ -141,7 +169,7 @@ class Grid:
             cell = self.grid[pos_y // 20][pos_x // 20]
             if not cell.selected and len(self.nodes) < 2:
                 cell.select()
-                self.nodes.append((pos_x // 20, pos_y // 20))
+                self.nodes.append((pos_y // 20, pos_x // 20))
             elif cell.selected:
                 cell.select()
-                self.nodes.remove((pos_x // 20, pos_y // 20))
+                self.nodes.remove((pos_y // 20, pos_x // 20))

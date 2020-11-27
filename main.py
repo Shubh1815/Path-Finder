@@ -1,6 +1,6 @@
-import threading
 import tkinter as tk
 from grid import Grid
+from algorithms.a_star import a_star
 from utils import Button, Checkbutton, Label
 
 class App(tk.Tk):
@@ -10,9 +10,7 @@ class App(tk.Tk):
         self.minsize(800, 501)
         self.resizable(0, 0)
         self.title("Path Finder")
-        self.protocol('WM_DELETE_WINDOW', self.quit)
 
-        self.running = True
         self.visualize_maze = tk.IntVar()
         self.perfect_maze = tk.IntVar()
 
@@ -21,14 +19,14 @@ class App(tk.Tk):
         container.columnconfigure(1, weight=1) # Expanding the 2nd column
         container.pack(fill=tk.X)
 
-        canvas = tk.Canvas(
+        self.canvas = tk.Canvas(
             container,
             width=501,
             height=501,
             bg="#14274e",
             highlightthickness=0,
         )
-        canvas.grid(row=0, column=0, padx=5, pady=5)
+        self.canvas.grid(row=0, column=0, padx=5, pady=5)
 
         self.toolkit = tk.Frame(container, bg="#334062")
         self.toolkit.columnconfigure(0, weight=1)
@@ -41,12 +39,10 @@ class App(tk.Tk):
             pady=5
         )
 
-        self.grid = Grid(canvas, 25, 25)
-        self.clear_maze_thread = None
-        self.generate_maze_thread = None
+        self.grid = Grid(self.canvas, 25, 25)
         self.grid.initialize()
 
-        canvas.bind('<Button-1>', self.grid.mark_cell)
+        self.canvas.bind('<Button-1>', self.grid.mark_cell)
 
         self.toolkit_section()
 
@@ -70,7 +66,10 @@ class App(tk.Tk):
         Button(
             self.toolkit,
             text="Generate Maze",
-            command=self.generate_maze
+            command=lambda: self.grid.generate_maze(
+                self.visualize_maze.get(), 
+                self.perfect_maze.get() + 1
+            )
         ).grid(row=2, column=0, padx=10, pady=5, sticky='WE')
 
         Checkbutton(
@@ -82,7 +81,7 @@ class App(tk.Tk):
         Button(
             self.toolkit,
             text="Clear Maze",
-            command=self.clear_maze
+            command=self.grid.reset
         ).grid(row=3, column=0, padx=10,pady=5, sticky='WE')
 
         Checkbutton(
@@ -93,39 +92,15 @@ class App(tk.Tk):
 
         Label(
             self.toolkit,
-            text="Shortest Path Finding",
+            text="Path Finding",
             size=14
         ).grid(row=5, column=0, padx=10, pady=10, sticky='W')
 
-    def clear_maze(self):
-        if (not self.generate_maze_thread or \
-           not self.generate_maze_thread.is_alive()) and \
-           (not self.clear_maze_thread or not self.clear_maze_thread.is_alive()):
-
-            self.clear_maze_thread = threading.Thread(
-                target=self.grid.reset
-            )
-            self.clear_maze_thread.start()
-
-    def generate_maze(self):
-        if (not self.generate_maze_thread or \
-           not self.generate_maze_thread.is_alive()) and \
-           (not self.clear_maze_thread or not self.clear_maze_thread.is_alive()):
-
-            self.grid.reset()
-            self.generate_maze_thread = threading.Thread(
-                target=self.grid.generate_maze,
-                args=(self.visualize_maze.get(), self.perfect_maze.get() + 1)
-            )
-            self.generate_maze_thread.start()
-
-    def quit(self):
-        if self.clear_maze_thread and self.clear_maze_thread.is_alive():
-            self.clear_maze_thread.join()
-        if self.generate_maze_thread and self.generate_maze_thread.is_alive():
-            self.generate_maze_thread.join()
-
-        self.destroy()
+        Button(
+            self.toolkit,
+            text="Find Path",
+            command=lambda: a_star(self.grid),
+        ).grid(row=6, column=0, columnspan=2, padx=10,pady=5, sticky='WE')
 
 if __name__ == '__main__':
     root = App()
