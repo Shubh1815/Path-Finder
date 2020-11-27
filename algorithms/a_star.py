@@ -1,7 +1,7 @@
 import heapq
 import time
 
-def euclidean_distance(cor_x1, cor_y1, cor_x2, cor_y2):
+def manhattan_distance(cor_x1, cor_y1, cor_x2, cor_y2):
     return abs(cor_x1 - cor_x2) + abs(cor_y1 - cor_y2)
 
 def mark_visited(cell, color):
@@ -36,7 +36,7 @@ def a_star(grid):
     g_score[start_x][start_y] = 0
 
     f_score = [[float('inf') for i in range(width)] for j in range(length)]
-    f_score[start_x][start_y] = euclidean_distance(start_x, start_y, end_x, end_y)
+    f_score[start_x][start_y] = manhattan_distance(start_x, start_y, end_x, end_y)
 
     open_set = [(f_score[start_x][start_y], start_x, start_y)]
 
@@ -66,7 +66,7 @@ def a_star(grid):
                     came_from[(next_node_x, next_node_y)] = current[1:]
                     g_score[next_node_x][next_node_y] = tentative_g_score
 
-                    heuristic = euclidean_distance(next_node_x, next_node_y, end_x, end_y)
+                    heuristic = manhattan_distance(next_node_x, next_node_y, end_x, end_y)
 
                     f_score[next_node_x][next_node_y] = tentative_g_score + heuristic
 
